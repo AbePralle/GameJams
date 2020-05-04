@@ -10,7 +10,7 @@ class GameScreen : Screen [singleton]
 
     method on_draw
       Display.clear( Color.BLACK )
-      layout.camera = Game.hero.position
+      layout.camera = ((Game.hero.position * 100).floor / 100)
       Game.mine.on_begin_draw
       layout.draw( Game.mine=>draw )
       Game.mine.on_end_draw

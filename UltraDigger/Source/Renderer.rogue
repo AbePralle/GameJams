@@ -13,5 +13,6 @@ class DiggerRenderer : GameRenderer [singleton]
   METHODS
     method draw( entity:Digger )
       local size = entity.size
-      world_to_screen( Box(entity.position-size/2,size) ).floor.fill( Color.WHITE )
+      local pos = (Game.hero.position * 100).floor / 100
+      world_to_screen( Box(pos-size/2,size) ).floor.fill( Color.WHITE )
 endClass

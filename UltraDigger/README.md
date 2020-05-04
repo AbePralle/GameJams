@@ -2,6 +2,8 @@
 
 SEAJAM May 1-3, 2020
 
+Web version: [Ultra Digger](https://runegate.com/GameJams/UltraDigger/)
+
 ## Building
 
 1. Install [Rogue](https://github.com/AbePralle/Rogue).
