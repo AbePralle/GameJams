@@ -1,0 +1,106 @@
+uses Plasmacore
+
+class Mine
+  PROPERTIES
+    width, height : Int32
+    ground        : Byte[]
+    debug_colors  : Color[] #FIXME
+    is_visible    : Logical[]
+    reveal_queue  = XY[]
+
+  METHODS
+    method init( width, height )
+      MapGenerator.generate( this )
+
+    method contains( pos:XY )->Logical
+      return (pos.x >= 0 and pos.x < width and pos.y >= 0 and pos.y < height)
+
+    method get( pos:XY )->Int32
+      if (pos.x >= 0 and pos.x < width and pos.y >= 0 and pos.y < height)
+        return ground[ pos.y.floor*width + pos.x.floor ]
+      else
+        return 0
+      endIf
+
+    method index_to_xy( index:Int32 )->XY
+      return XY( index%width, index/width )
+
+    method draw( index:Int32, ij:XY, bounds:Box )
+      if (not is_visible[index]) return
+      local type = ground[ index ]
+      if (type)
+        local color = Color.BROWN : Color
+        which (type)
+          case GroundType.IMPENETRABLE:    color = Color.DARK_GRAY
+          case GroundType.DIRT:            color = Color.BROWN
+          case GroundType.EXCAVATING_DIRT: color = Color.ORANGE
+          case GroundType.GEM:             color = Color.WHITE
+        endWhich
+        which (type)
+          case GroundType.GEM
+            bounds.fill( Color.BROWN )
+            bounds.draw( (0.5).lerp(Color.BROWN,Color.BLACK), Display.density )
+            local ts = GameScreen.layout.tile_size
+            local sz = ts * 0.7
+            (Box(-sz/2,sz).rotated(Degrees(45)) + bounds.center).fill( debug_colors[index] )
+          others
+            bounds.fill( color )
+            bounds.draw( (0.5).lerp(Color.BROWN,Color.BLACK), Display.density )
+        endWhich
+      else
+        bounds.fill( (0.5).lerp(Color.BROWN,Color.BLACK) )
+      endIf
+
+    method is_colliding( box:Box )->Logical
+      local x1 = box.position.x
+      if (x1 < 0) return true
+      local x2 = (box.position.x + box.size.x)
+      if (x2 >= width) return true
+
+      x1 = x1.floor.clamped_low( 0 )
+      x2 = x2.floor.clamped_high( width-1 )
+      local y1 = box.position.y.floor.clamped_low( 0 )
+      local y2 = (box.position.y + box.size.y).floor.clamped_high( height-1 )
+      if (x1 > x2 or y1 > y2) return false
+
+      local line_start = y1 * width
+      forEach (y in y1..y2)
+        forEach (x in x1..x2)
+          if (ground[line_start+x]) return true
+        endForEach
+        line_start += width
+      endForEach
+
+      return false
+
+    method on_begin_draw
+
+    method on_end_draw
+
+    method reveal( pos:XY )
+      reveal_queue.add( pos )
+      while (not reveal_queue.is_empty)
+        pos = reveal_queue.remove_last
+        if (pos.x >= 0 and pos.x < width and pos.y >= 0 and pos.y < height)
+          local index = pos.y.floor*width + pos.x.floor
+          if (not is_visible[index])
+            is_visible[ index ] = true
+            if (GroundType(ground[index]) == GroundType.EMPTY)
+              forEach (dj in -1..1)
+                forEach (di in -1..1)
+                  if (di != 0 or dj != 0) reveal_queue.add( pos+XY(di,dj) )
+                endForEach
+              endForEach
+            endIf
+          endIf
+        endIf
+      endWhile
+
+    method set( pos:XY, value:Int32 )
+      if (pos.x >= 0 and pos.x < width and pos.y >= 0 and pos.y < height)
+        ground[ pos.y.floor*width + pos.x.floor ] = value
+      endIf
+
+    method xy_to_index( xy:XY )->Int32
+      return xy.y.floor * width + xy.x.floor
+endClass

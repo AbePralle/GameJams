@@ -1,0 +1,47 @@
+uses Plasmacore
+
+class GameState : ScreenState<<GameScreen>>
+  PROPERTIES
+    start_y = -1
+
+  METHODS
+    method on( e:KeyEvent )
+      if (e.is_press(Keycode.R))
+        regenerate
+        #{
+      elseIf (e.is_press(Keycode.MINUS))
+        start_y -= 50
+        regenerate
+      elseIf (e.is_press(Keycode.EQUALS))
+        start_y += 50
+        regenerate
+        }#
+      endIf
+
+    method regenerate
+      MapGenerator.generate( Game.mine )
+      Game.hero = Digger( Game.mine, XY(Game.mine.width/2+0.5,start_y) )
+
+    method on_update
+      local sum : XY
+      sum += sum_v( Keycode.W,  0, -1 )
+      sum += sum_v( Keycode.A, -1,  0 )
+      sum += sum_v( Keycode.S,  0,  1 )
+      sum += sum_v( Keycode.D,  1,  0 )
+      if (not sum.is_zero) Game.hero.accelerate( sum.normalized )
+
+    method sum_v( keycode:Int32, dx:Int32, dy:Int32 )->XY
+      if (Keyboard.is_key_pressed(keycode))
+        return XY(dx,dy)
+      endIf
+      return XY(0,0)
+
+    method dig( dx:Int32, dy:Int32 )
+      if (not Game.hero.velocity.is_zero) return
+      local pos = Game.hero.position.floor + XY(dx,dy)
+      if (Game.mine.contains(pos))
+        Game.mine.ground[ pos.y*Game.mine.width+pos.x ] = 0
+      endIf
+
+endClass
+

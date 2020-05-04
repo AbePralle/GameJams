@@ -1,0 +1,44 @@
+uses Plasmacore
+
+enum Direction
+  NONE  = 0
+  UP    = 1
+  LEFT  = 2
+  DOWN  = 4
+  RIGHT = 8
+
+  GLOBAL METHODS
+    method random( gen=Random:Random )->Direction
+      local shift = gen.int32(4) :<<: 2
+      return (0b0001_0010_0100_1000 :>>>: shift) & 0b1111
+
+  METHODS
+    method left->Direction
+      which (value)
+        case UP:        return LEFT
+        case LEFT:      return DOWN
+        case DOWN:      return RIGHT
+        case RIGHT:     return UP
+        others
+          return random
+      endWhich
+
+    method right->Direction
+      which (value)
+        case UP:        return RIGHT
+        case LEFT:      return UP
+        case DOWN:      return LEFT
+        case RIGHT:     return DOWN
+        others
+          return random
+      endWhich
+
+    method to->XY
+      local x = 0.0
+      local y = 0.0
+      if (value & UP.value)    --y
+      if (value & DOWN.value)  ++y
+      if (value & LEFT.value)  --x
+      if (value & RIGHT.value) ++x
+      return XY(x,y)
+endEnum

@@ -1,0 +1,52 @@
+uses Plasmacore
+
+class MoveSolver [singleton]
+  PROPERTIES
+    digger : Digger
+    show = true
+
+  METHODS
+    method move( digger )
+      if (digger.velocity.magnitude_squared > digger.MAX_VELOCITY^2)
+        digger.velocity = digger.velocity.normalized * digger.MAX_VELOCITY
+      endIf
+      update_position
+
+    method update_position
+      local delta = digger.velocity
+      local original_pos = digger.position
+      digger.position += delta
+      if (digger.is_colliding)
+        # Collides if we move in both X and Y - check X by itself
+        digger.position = original_pos + delta.xv
+        if (digger.is_colliding)
+          # Collides if we move in X - check Y only
+          digger.position = original_pos + delta.yv
+          if (digger.is_colliding)
+            # Collides with everything: full stop
+            digger.position = (digger.position.floor) - (digger.size * 0.51 * delta.sign)
+            if (delta.x > 0) digger.position += XY(1,0)
+            if (delta.y > 0) digger.position += XY(0,1)
+            digger.velocity = XY.zero
+          else
+            # Only collides horizontally; zero out horizontal velocity
+            local digger_x = (digger.position.x.floor) - (digger.size.x * 0.51 * delta.x.sign)
+            if (delta.x > 0) ++digger_x
+            digger.velocity = digger.velocity.yv
+          endIf
+        else
+          # Only collides vertically
+          local digger_x = digger.position.x
+          local digger_y = (digger.position.y.floor) - (digger.size.y * 0.51 * delta.y.sign)
+          if (delta.y > 0) ++digger_y
+          digger.position = XY( digger_x, digger_y )
+
+          local friction = which(digger.acceleration){ XY.zero:0.80 || 1.0 }
+          digger.velocity = digger.velocity.xv * friction
+          if (digger.velocity.is_zero(0.001))
+            digger.velocity = XY.zero
+          endIf
+        endIf
+      endIf
+
+endClass

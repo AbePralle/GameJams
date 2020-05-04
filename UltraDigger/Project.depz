@@ -1,0 +1,5 @@
+[REPO Plasmacore]
+prefix=https://github.com/AbePralle
+checkout=develop
+fetch_full=False
+default_actions=--init --update --ff --outdated

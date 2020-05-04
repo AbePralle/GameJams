@@ -1,0 +1,17 @@
+uses Plasmacore
+
+class GameRenderer
+  METHODS
+    method world_to_screen( pos:XY )->XY
+      return GameScreen.layout.map_to_screen( pos )
+
+    method world_to_screen( box:Box )->Box
+      return GameScreen.layout.map_to_screen( box )
+endClass
+
+class DiggerRenderer : GameRenderer [singleton]
+  METHODS
+    method draw( entity:Digger )
+      local size = entity.size
+      world_to_screen( Box(entity.position-size/2,size) ).floor.fill( Color.WHITE )
+endClass

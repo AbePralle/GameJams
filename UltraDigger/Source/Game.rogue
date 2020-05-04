@@ -1,0 +1,15 @@
+uses Plasmacore
+
+class Game [singleton]
+  PROPERTIES
+    mine : Mine
+    hero : Digger
+
+  METHODS
+    method init
+      mine = Mine( 39, 1053 )
+      hero = Digger( mine, XY(mine.width/2+0.5,-5.5) )
+
+    method update
+      hero.update
+endClass

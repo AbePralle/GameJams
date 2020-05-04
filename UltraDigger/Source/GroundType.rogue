@@ -1,0 +1,21 @@
+enum GroundType( cost=0:Int32 )
+  EMPTY
+  IMPENETRABLE
+  DIRT(1)
+  EXCAVATING_DIRT
+  GEM(2)
+
+  METHODS
+    method is_diggable->Logical
+      return cost?
+
+    method to->Byte
+      return value->Byte
+endEnum
+
+augment Byte[]
+  METHODS
+    method add( type:GroundType )
+      add( type.value )
+endAugment
+

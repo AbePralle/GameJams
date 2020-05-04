@@ -1,0 +1,79 @@
+uses Plasmacore
+
+class Digger
+  DEFINITIONS
+    ACCELERATION = 0.005
+    DIG_TIME     = 0.5
+    #DIG_TIME     = 0.1
+    MAX_VELOCITY = 0.79
+
+  PROPERTIES
+    mine         : Mine
+    position     : XY
+    velocity     : XY
+    acceleration : XY
+    size         : XY
+    actions      : Action
+
+  METHODS
+    method init( mine, position, size=XY(0.8,0.8) )
+
+    method draw
+      DiggerRenderer.draw( this )
+
+    method is_colliding->Logical
+      local box = Box( position-size/2, size )
+      return mine.is_colliding( box )
+
+    method is_colliding( delta:XY )->Logical
+      local old_pos = position
+      position += delta
+      local result = is_colliding
+      position = old_pos
+      return result
+
+    method is_grounded->Logical
+      return is_colliding( XY(0,0.02) )
+
+    method accelerate( vector:XY )
+      if (not actions)
+        local ortho_v = which{ vector.abs.x>vector.abs.y:vector.xv.sign || vector.yv.sign }
+        contingent
+          # Possibly drill
+          necessary (is_grounded)
+          local dest_pos = position.floor + ortho_v
+          local type = GroundType( mine[ dest_pos ] )
+          necessary (type.cost)
+          necessary (vector.abs.max >= 0.8)  # Must be 80% along single axis for drill
+
+          if (ortho_v.x)
+            # Moving horizontal. Make sure we're up against a wall
+            necessary (is_colliding(XY(ortho_v.x*0.02,0)))
+
+            # We're starting off grounded so keep our same vertical position at the destination.
+            dest_pos = dest_pos.xv + XY(0.5,position.y)
+          else
+            # Moving vertical.
+            necessary (velocity.x.abs < 0.01)
+            dest_pos = dest_pos.xv + XY(0.5,position.y+ortho_v.y)
+          endIf
+          actions += ActionDig( this, dest_pos, DIG_TIME )
+
+        unsatisfied
+          acceleration = ACCELERATION * vector
+          velocity += acceleration
+        endContingent
+      endIf
+
+    method update
+      if (actions)
+        actions = actions.update
+      else
+        velocity += XY(0,0.003)
+        MoveSolver.move( this )
+      endIf
+      acceleration = XY.zero
+
+endClass
+
+

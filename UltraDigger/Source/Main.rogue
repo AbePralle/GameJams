@@ -1,0 +1,71 @@
+uses Plasmacore
+
+$include "Actions.rogue"
+$include "Digger.rogue"
+$include "Direction.rogue"
+$include "Game.rogue"
+$include "GameScreen.rogue"
+$include "GameState.rogue"
+$include "GroundType.rogue"
+$include "MapGenerator.rogue"
+$include "Mine.rogue"
+$include "MoveSolver.rogue"
+$include "Renderer.rogue"
+
+Display( "Main" ).screen = LaunchScreen()
+
+class LaunchScreen : Screen
+  METHODS
+    method on_start
+      change_screen( GameScreen )
+
+      #{
+    method on_draw
+      Display.clear( Color.BLACK )
+      local random = Random(1)
+      subdivide( Display.bounds, random )
+
+    method subdivide( bounds:Box, random:Random )
+      local min = Display.size.min / 10
+      if (bounds.width <= min and bounds.height <= min)
+        bounds.draw( Color.WHITE, Display.density )
+        return
+      endIf
+      if (bounds.width >= bounds.height)
+        #local x = ((random.real64 * 0.80 + 0.10) * bounds.width).floor
+        local x = (0.50 * bounds.width).floor
+        local left  = bounds.subset( XY(x,bounds.height), Anchor.LEFT )
+        local right = bounds.subset( XY(bounds.width-x,bounds.height), Anchor.RIGHT )
+        subdivide( left, random )
+        subdivide( right, random )
+      else
+        #local y = ((random.real64 * 0.80 + 0.10) * bounds.height).floor
+        local y = (0.50 * bounds.height).floor
+        local top  = bounds.subset( XY(bounds.width,y), Anchor.TOP )
+        local bottom = bounds.subset( XY(bounds.width,bounds.height-y), Anchor.BOTTOM )
+        subdivide( top, random )
+        subdivide( bottom, random )
+      endIf
+      }#
+endClass
+
+$if compareVersions(rogueVersion,"1.7.1") < 0
+augment Real64
+  METHODS
+    method lerp( a:XY, b:XY )->XY
+      <replace>
+      return a + (b-a) * this
+
+    method lerp( line:Line )->XY
+      <replace>
+      return line.a + (line.b-line.a) * this
+endAugment
+
+augment XY
+  METHODS
+    method is_zero( threshold:Real64 )->Logical
+      <replace>
+      return x.abs <= threshold and y.abs <= threshold
+endAugment
+$endIf
+

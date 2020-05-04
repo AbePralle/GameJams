@@ -1,0 +1,97 @@
+uses Plasmacore
+
+class MapGenerator [singleton]
+  PROPERTIES
+    mine           : Mine
+    width, height  : Int32
+    ground         : Byte[]
+    random         = Random
+
+    left_right_chance = 0.25
+    max_distance      = 5
+
+  METHODS
+    method generate( mine )
+      width = mine.width
+      height = mine.height
+      ground = Byte[]( width*height )
+      mine.ground = ground
+      mine.is_visible = Dim<<Logical>>( width*height )
+mine.debug_colors = Color[](width*height)
+
+      loop (width*height)
+        ground.add( GroundType.DIRT )
+        mine.debug_colors.add( Color.WHITE )
+        #ground.add( GroundType.EMPTY )
+      endLoop
+
+      local row_start = 0
+      forEach (j in 0..<height)
+        ground[row_start]         = GroundType.IMPENETRABLE
+        ground[row_start+width-1] = GroundType.IMPENETRABLE
+        row_start += width
+      endForEach
+
+      row_start = (height-1) * width
+      forEach (i in 0..<width)
+        ground[row_start+i] = GroundType.IMPENETRABLE
+      endForEach
+
+      add_gems
+
+      #{
+      local min = width
+      local max = width * 3
+      local index = width + random.int32(min,max)
+      while (index < limit)
+        create_gem_cluster( mine.index_to_xy(index) )
+        index += random.int32(min,max)
+      endWhile
+      }#
+
+      local limit = width*height - width
+      local min = width / 4
+      local max = width
+      local index = width + random.int32(min,max)
+      while (index < limit)
+        create_hole( mine.index_to_xy(index), Direction.random, random.int32(0,max_distance) )
+        index += random.int32(min,max)
+      endWhile
+
+      forEach (i in 0..<width)
+        mine.reveal( XY(i,0) )
+      endForEach
+
+    method add_gems
+      local bounds = Box( 0, 0, width, height )
+      local size = ((XY(width,height) / XY(10,10)) + XY(0.5,0.5)).floor
+      forEach (j in 0..<size.y)
+        forEach (i in 0..<size.x)
+          local plot = bounds.at( XY(i,j), size )
+          if (i & 1) plot += plot.size.yv / 2
+          create_gem_cluster( plot.at(random.xy).floor )
+        endForEach
+      endForEach
+
+    method create_gem_cluster( origin:XY )
+      local color = random.color
+      loop ((random.gaussian*5+10).floor.clamped(5,15))
+        local x = (random.gaussian*2).floor.clamped(-3,3)
+        local y = (random.gaussian*2).floor.clamped(-3,3)
+        local gem_pos = (origin + XY(x,y)).floor
+        if (GroundType(mine[gem_pos]).is_diggable)
+          mine[gem_pos] = GroundType.GEM
+          mine.debug_colors[ mine.xy_to_index(gem_pos) ] = color
+        endIf
+      endLoop
+
+    method create_hole( pos:XY, dir:Direction, max:Int32 )
+      if (max == 0) return
+      if (GroundType(mine[pos]).is_diggable)
+        mine[pos] = GroundType.EMPTY
+        if (random.real64 < left_right_chance) create_hole( pos+dir.left->XY, dir.left, max-1 )
+        if (random.real64 < left_right_chance) create_hole( pos+dir.right->XY, dir.right, max-1 )
+        create_hole( pos+dir->XY, dir, max-1 )
+      endIf
+endClass
+

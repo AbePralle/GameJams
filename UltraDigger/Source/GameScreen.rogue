@@ -1,0 +1,33 @@
+uses Plasmacore
+
+class GameScreen : Screen [singleton]
+  PROPERTIES
+    layout : TileMapLayout
+
+  METHODS
+    method on_start
+      change_state( GameState() )
+
+    method on_draw
+      Display.clear( Color.BLACK )
+      layout.camera = Game.hero.position
+      Game.mine.on_begin_draw
+      layout.draw( Game.mine=>draw )
+      Game.mine.on_end_draw
+      Game.hero.draw
+      SystemFont.scale = Display.density*2
+      SystemFont.anchor = Anchor.TOP_RIGHT
+      SystemFont.draw( "$ ft" (-((Game.hero.position.y.floor+1)*10)->Int32), Display.at(1,0) )
+      #SystemFont.anchor = Anchor.TOP_LEFT
+      #SystemFont.draw( "$ ft/s" (((Game.hero.velocity)*6000).floor / 10), Display.at(0,0) )
+
+    method on_resize
+      local mine = Game.mine
+      layout = TileMapLayout( mine.width, mine.height, (Display.size.min/11).floor )
+      #layout = TileMapLayout( mine.width, mine.height, (Display.width/Real64(mine.width)).floor )
+      layout.clamp_edges = false
+
+    method on_update
+      Game.update
+endClass
+

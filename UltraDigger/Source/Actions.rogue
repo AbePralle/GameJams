@@ -1,0 +1,24 @@
+uses Plasmacore
+
+class ActionDig( digger:Digger, destination:XY, duration ) : Action
+  PROPERTIES
+    origin : XY
+
+  METHODS
+    method on_start
+      origin = digger.position
+      digger.mine[ destination ] = GroundType.EXCAVATING_DIRT
+
+    method on_update
+      digger.position = progress.lerp( origin, destination )
+
+    method on_finish
+      digger.mine[ destination ] = GroundType.EMPTY
+
+      digger.mine.is_visible[ digger.mine.xy_to_index(destination) ] = false
+      # Since walls adjoining an empty space are visible, we need to set the
+      # just-drilled wall back to hidden to enable a broader reveal.
+
+      digger.mine.reveal( destination )
+
+endClass
